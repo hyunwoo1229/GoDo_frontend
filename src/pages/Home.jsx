@@ -1,31 +1,30 @@
-import { useState } from 'react'
-import { portfolioItems, services } from '../data/portfolio'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk'
+import { services } from '../data/portfolio'
 import useInView from '../hooks/useInView'
+import { mediaApi } from '../lib/api'
 import './Home.css'
 
 // ─────────────────────────────────────────────────────────────────
-// Hero
+// Hero Section
 // ─────────────────────────────────────────────────────────────────
 function HeroSection() {
   return (
     <section className="hero">
-      {/* 히어로 배경 이미지: public/images/hero/main.jpg 에 넣으세요 */}
       <div className="hero__bg" />
       <div className="hero__overlay" />
 
       <div className="hero__content container">
         <p className="hero__eyebrow">DRONE STUDIO · SINCE 2020</p>
-
         <h1 className="hero__title">
           하늘 위에서,<br />
           새로운 시각
         </h1>
-
         <p className="hero__subtitle">
           전문 드론 촬영으로 평범한 장면을<br />
           특별한 작품으로 만들어 드립니다.
         </p>
-
         <div className="hero__actions">
           <a href="#portfolio" className="btn btn--primary">작품 보기</a>
           <a href="#contact" className="btn btn--ghost">촬영 문의</a>
@@ -41,7 +40,7 @@ function HeroSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Stats
+// Stats Section
 // ─────────────────────────────────────────────────────────────────
 const STATS = [
   { value: '200+', label: '완료 프로젝트' },
@@ -72,35 +71,98 @@ function StatsSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Portfolio
+// Portfolio Section (백엔드 API 연동)
 // ─────────────────────────────────────────────────────────────────
+function pickArray(data) {
+  if (!data) return []
+  if (Array.isArray(data)) return data
+  if (Array.isArray(data.content)) return data.content
+  if (Array.isArray(data.items)) return data.items
+  return []
+}
+
 function PortfolioCard({ item }) {
-  const [imgError, setImgError] = useState(false)
+  const [mediaError, setMediaError] = useState(false)
+  const isVideo = item.mediaType === 'VIDEO'
+  const title = item.locationName || item.originalFileName || `작품 #${item.id}`
+  const category = isVideo ? '영상' : '사진'
+  // 영상은 반드시 fileUrl(실제 영상)을 src로 사용. thumbnailUrl은 poster(이미지 미리보기)로.
+  // 이미지는 thumbnailUrl이 있으면 그것을, 없으면 fileUrl 사용.
+  const videoSrc = item.fileUrl
+  const videoPoster = item.thumbnailUrl || undefined
+  const imageSrc = item.thumbnailUrl || item.fileUrl
+  const hasMedia = isVideo ? !!videoSrc : !!imageSrc
 
   return (
-    <div className={`pf-card pf-card--${item.size}`}>
+    <Link
+      to="/map"
+      state={{
+        autoOpen: {
+          id: item.id,
+          latitude: item.latitude,
+          longitude: item.longitude,
+          locationName: item.locationName,
+          mediaType: item.mediaType,
+        },
+      }}
+      className="pf-card pf-card--small"
+    >
       <div className="pf-card__media">
-        {!imgError ? (
-          <img
-            src={item.image}
-            alt={item.title}
-            loading="lazy"
-            onError={() => setImgError(true)}
-          />
+        {!mediaError && hasMedia ? (
+          isVideo ? (
+            <video
+              src={videoSrc}
+              poster={videoPoster}
+              muted
+              loop
+              autoPlay
+              playsInline
+              preload="auto"
+              onError={() => setMediaError(true)}
+            />
+          ) : (
+            <img
+              src={imageSrc}
+              alt={title}
+              loading="lazy"
+              decoding="async"
+              onError={() => setMediaError(true)}
+            />
+          )
         ) : (
           <div className="pf-card__placeholder" data-index={item.id} />
         )}
+        {isVideo && <span className="pf-card__play" aria-hidden="true">▶</span>}
       </div>
       <div className="pf-card__overlay">
-        <span className="pf-card__category">{item.category}</span>
-        <h3 className="pf-card__title">{item.title}</h3>
+        <span className="pf-card__category">{category}</span>
+        <h3 className="pf-card__title">{title}</h3>
       </div>
-    </div>
+    </Link>
   )
 }
 
 function PortfolioSection() {
   const [ref, inView] = useInView()
+  const [items, setItems] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const { data } = await mediaApi.getAllMedia(0, 18)
+        if (!cancelled) setItems(pickArray(data))
+      } catch (error) {
+        console.error('포트폴리오 로딩 실패', error)
+        if (!cancelled) setItems([])
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   return (
     <section id="portfolio" className="portfolio" ref={ref}>
       <div className="container">
@@ -112,14 +174,97 @@ function PortfolioSection() {
           </p>
         </div>
 
-        <div className="portfolio__grid">
-          {portfolioItems.map(item => (
-            <PortfolioCard key={item.id} item={item} />
-          ))}
+        {loading ? (
+          <div className="portfolio__status">불러오는 중...</div>
+        ) : items.length === 0 ? (
+          <div className="portfolio__empty">
+            <p>아직 촬영된 작품이 없습니다.</p>
+            <Link to="/admin/upload" className="btn btn--outline">
+              관리자 업로드
+            </Link>
+          </div>
+        ) : (
+          <div className="portfolio__grid">
+            {items.map(item => (
+              <PortfolioCard key={item.id} item={item} />
+            ))}
+          </div>
+        )}
+      </div>
+    </section>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Map Preview Section
+// ─────────────────────────────────────────────────────────────────
+function MapPreviewSection() {
+  const navigate = useNavigate()
+  const [ref, inView] = useInView()
+  const [locations, setLocations] = useState([])
+
+  useKakaoLoader({
+    appkey: import.meta.env.VITE_KAKAO_MAP_KEY,
+  })
+
+  useEffect(() => {
+    let cancelled = false
+    mediaApi.getLocations()
+      .then(res => {
+        if (cancelled) return
+        const data = res.data
+        const arr = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.content) ? data.content
+          : Array.isArray(data?.items) ? data.items
+          : []
+        setLocations(arr)
+      })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  return (
+    <section id="map-preview" className="map-preview" ref={ref}>
+      <div className="container">
+        <div className={`section-head fade-in${inView ? ' visible' : ''}`}>
+          <span className="section-label">MAP</span>
+          <h2 className="section-title">촬영 위치</h2>
+          <p className="section-desc">
+            하늘에서 담은 순간들 — 위치로 찾아보세요
+          </p>
         </div>
 
-        <div className="portfolio__cta">
-          <a href="#contact" className="btn btn--outline">모든 작품 문의하기</a>
+        <div className={`map-preview__wrap fade-in delay-1${inView ? ' visible' : ''}`}>
+          <Map
+            center={{ lat: 36.5, lng: 127.8 }}
+            level={13}
+            style={{ width: '100%', height: '500px' }}
+          >
+            {locations.map((loc, i) => (
+              <MapMarker
+                key={loc.id ?? `${loc.latitude},${loc.longitude},${i}`}
+                position={{ lat: loc.latitude, lng: loc.longitude }}
+                onClick={() =>
+                  navigate('/map', {
+                    state: {
+                      autoOpen: {
+                        id: loc.id,
+                        latitude: loc.latitude,
+                        longitude: loc.longitude,
+                        locationName: loc.locationName,
+                        mediaType: loc.mediaType,
+                      },
+                    },
+                  })
+                }
+              />
+            ))}
+          </Map>
+
+          <Link to="/map" className="map-preview__fullscreen">
+            전체화면 보기 →
+          </Link>
         </div>
       </div>
     </section>
@@ -127,7 +272,7 @@ function PortfolioSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Services
+// Services Section
 // ─────────────────────────────────────────────────────────────────
 function ServicesSection() {
   const [ref, inView] = useInView()
@@ -161,7 +306,7 @@ function ServicesSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// About
+// About Section
 // ─────────────────────────────────────────────────────────────────
 function AboutSection() {
   const [ref, inView] = useInView()
@@ -190,11 +335,12 @@ function AboutSection() {
           </div>
 
           <div className={`about__visual fade-in delay-2${inView ? ' visible' : ''}`}>
-            {/* 이미지: public/images/about/studio.jpg */}
             <div className="about__img-wrap">
               <img
                 src="/images/about/studio.jpg"
                 alt="GODO 스튜디오"
+                loading="lazy"
+                decoding="async"
                 onError={e => { e.currentTarget.style.display = 'none' }}
               />
             </div>
@@ -210,7 +356,7 @@ function AboutSection() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Contact
+// Contact Section
 // ─────────────────────────────────────────────────────────────────
 function ContactSection() {
   const [ref, inView] = useInView()
@@ -267,7 +413,7 @@ function Footer() {
 }
 
 // ─────────────────────────────────────────────────────────────────
-// Page
+// Main Page
 // ─────────────────────────────────────────────────────────────────
 export default function Home() {
   return (
@@ -275,6 +421,7 @@ export default function Home() {
       <HeroSection />
       <StatsSection />
       <PortfolioSection />
+      <MapPreviewSection />
       <ServicesSection />
       <AboutSection />
       <ContactSection />
