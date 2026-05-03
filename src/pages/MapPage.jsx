@@ -148,7 +148,6 @@ export default function MapPage() {
 
       {/* 좌상단 오버레이: 타이틀 */}
       <div className="map-page__overlay map-page__overlay--title fade-in visible">
-        <span className="section-label">MAP</span>
         <h1 className="map-page__title">촬영 위치</h1>
         <p className="map-page__desc">마커를 클릭하여 해당 위치의 작품을 확인하세요.</p>
       </div>

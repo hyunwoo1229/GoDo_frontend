@@ -78,23 +78,23 @@
   /* BackButton(44px) + 12px gap + 16px left + safe-left */
   left: calc(16px + 44px + 12px + var(--safe-left));
   max-width: 360px;
-  padding: 0.875rem 1.25rem;
+  padding: 0.55rem 1rem;
 }
 
 .map-page__title {
   font-family: var(--font-display);
-  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  font-size: clamp(1.35rem, 2.4vw, 1.6rem);
   letter-spacing: 0.04em;
   line-height: 1.1;
   color: var(--text);
-  margin-top: 0.35rem;
-  margin-bottom: 0.5rem;
+  margin: 0;
 }
 
 .map-page__desc {
-  font-size: 0.82rem;
-  line-height: 1.6;
+  font-size: 0.78rem;
+  line-height: 1.4;
   color: var(--text-2);
+  margin-top: 0.2rem;
 }
 
 .map-page__overlay--count {
@@ -406,21 +406,21 @@
     left: calc(12px + 44px + 8px + var(--safe-left));
     right: calc(12px + var(--safe-right));
     max-width: none;
-    padding: 0.625rem 0.875rem;
+    /* BackButton(44px)와 비슷한 높이로 더 줄임 */
+    padding: 0.4rem 0.75rem;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
   }
 
-  /* 작은 화면에서는 제목/라벨만 노출, 설명은 너무 좁아 숨김 */
+  /* 모바일에서는 제목만, 설명은 공간상 숨김 */
   .map-page__title {
-    font-size: 1.4rem;
-    margin-top: 0.1rem;
-    margin-bottom: 0;
-    line-height: 1.1;
+    font-size: 1.05rem;
+    margin: 0;
+    line-height: 1.2;
   }
   .map-page__desc {
     display: none;
-  }
-  .map-page__overlay--title .section-label {
-    font-size: 0.6rem;
   }
 
   .map-page__overlay--count {
