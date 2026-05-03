@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { services } from '../data/portfolio'
 import useInView from '../hooks/useInView'
-import { mediaApi } from '../lib/api'
+import { useAllMedia, useMediaLocations } from '../hooks/useMediaList'
 import './Home.css'
 
 // ─────────────────────────────────────────────────────────────────
@@ -73,25 +73,17 @@ function StatsSection() {
 // ─────────────────────────────────────────────────────────────────
 // Portfolio Section (백엔드 API 연동)
 // ─────────────────────────────────────────────────────────────────
-function pickArray(data) {
-  if (!data) return []
-  if (Array.isArray(data)) return data
-  if (Array.isArray(data.content)) return data.content
-  if (Array.isArray(data.items)) return data.items
-  return []
-}
-
 function PortfolioCard({ item }) {
   const [mediaError, setMediaError] = useState(false)
   const isVideo = item.mediaType === 'VIDEO'
   const title = item.locationName || item.originalFileName || `작품 #${item.id}`
   const category = isVideo ? '영상' : '사진'
-  // 영상은 반드시 fileUrl(실제 영상)을 src로 사용. thumbnailUrl은 poster(이미지 미리보기)로.
-  // 이미지는 thumbnailUrl이 있으면 그것을, 없으면 fileUrl 사용.
-  const videoSrc = item.fileUrl
-  const videoPoster = item.thumbnailUrl || undefined
-  const imageSrc = item.thumbnailUrl || item.fileUrl
-  const hasMedia = isVideo ? !!videoSrc : !!imageSrc
+  // 영상은 정적 썸네일만 노출(자동재생 X). 클릭 시 /map 갤러리로 이동해 사용자 명시적 재생.
+  // 이미지는 thumbnailUrl 우선, 없으면 fileUrl.
+  const imageSrc = isVideo
+    ? (item.thumbnailUrl || null)
+    : (item.thumbnailUrl || item.fileUrl)
+  const hasImage = !!imageSrc
 
   return (
     <Link
@@ -108,27 +100,14 @@ function PortfolioCard({ item }) {
       className="pf-card pf-card--small"
     >
       <div className="pf-card__media">
-        {!mediaError && hasMedia ? (
-          isVideo ? (
-            <video
-              src={videoSrc}
-              poster={videoPoster}
-              muted
-              loop
-              autoPlay
-              playsInline
-              preload="auto"
-              onError={() => setMediaError(true)}
-            />
-          ) : (
-            <img
-              src={imageSrc}
-              alt={title}
-              loading="lazy"
-              decoding="async"
-              onError={() => setMediaError(true)}
-            />
-          )
+        {!mediaError && hasImage ? (
+          <img
+            src={imageSrc}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            onError={() => setMediaError(true)}
+          />
         ) : (
           <div className="pf-card__placeholder" data-index={item.id} />
         )}
@@ -144,24 +123,7 @@ function PortfolioCard({ item }) {
 
 function PortfolioSection() {
   const [ref, inView] = useInView()
-  const [items, setItems] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      try {
-        const { data } = await mediaApi.getAllMedia(0, 18)
-        if (!cancelled) setItems(pickArray(data))
-      } catch (error) {
-        console.error('포트폴리오 로딩 실패', error)
-        if (!cancelled) setItems([])
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [])
+  const { data: items = [], isLoading: loading } = useAllMedia(0, 18)
 
   return (
     <section id="portfolio" className="portfolio" ref={ref}>
@@ -201,28 +163,11 @@ function PortfolioSection() {
 function MapPreviewSection() {
   const navigate = useNavigate()
   const [ref, inView] = useInView()
-  const [locations, setLocations] = useState([])
+  const { data: locations = [] } = useMediaLocations()
 
   useKakaoLoader({
     appkey: import.meta.env.VITE_KAKAO_MAP_KEY,
   })
-
-  useEffect(() => {
-    let cancelled = false
-    mediaApi.getLocations()
-      .then(res => {
-        if (cancelled) return
-        const data = res.data
-        const arr = Array.isArray(data)
-          ? data
-          : Array.isArray(data?.content) ? data.content
-          : Array.isArray(data?.items) ? data.items
-          : []
-        setLocations(arr)
-      })
-      .catch(() => {})
-    return () => { cancelled = true }
-  }, [])
 
   return (
     <section id="map-preview" className="map-preview" ref={ref}>

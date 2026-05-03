@@ -4,6 +4,7 @@ import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk'
 import toast from 'react-hot-toast'
 import { mediaApi } from '../lib/api'
 import { authService } from '../lib/auth'
+import { convertImagesToWebP } from '../utils/imageConverter'
 import './AdminUpload.css'
 
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024        // 10MB
@@ -127,6 +128,10 @@ export default function AdminUpload() {
 
   const [uploading, setUploading] = useState(false)
 
+  // 이미지 → WebP 변환 진행 상태
+  const [converting, setConverting] = useState(false)
+  const [convertProgress, setConvertProgress] = useState({ done: 0, total: 0 })
+
   // 관리 섹션 state
   const [mediaList, setMediaList] = useState([])
   const [managementLoading, setManagementLoading] = useState(false)
@@ -206,7 +211,7 @@ export default function AdminUpload() {
     toast.success('로그아웃되었습니다')
   }
 
-  const handleFileChange = (e) => {
+  const handleFileChange = async (e) => {
     const picked = Array.from(e.target.files ?? [])
     e.target.value = ''
     if (picked.length === 0) return
@@ -227,8 +232,33 @@ export default function AdminUpload() {
     }
     if (accepted.length === 0) return
 
-    setFiles(accepted)
-    setFileStatuses(accepted.map(() => ({ status: 'pending', progress: 0 })))
+    // 이미지가 포함되어 있으면 WebP 변환 진행 (영상은 원본 유지)
+    const imageCount = accepted.filter((f) => f.type.startsWith('image/')).length
+    let finalFiles = accepted
+    if (imageCount > 0) {
+      setConverting(true)
+      setConvertProgress({ done: 0, total: imageCount })
+      try {
+        // convertImagesToWebP는 영상 파일은 변환 없이 통과시킴
+        let imagesDone = 0
+        finalFiles = await convertImagesToWebP(accepted, (done, total, current) => {
+          // current가 이미지일 때만 카운트
+          if (current?.type?.startsWith('image/')) {
+            imagesDone = Math.min(imagesDone + 1, imageCount)
+          }
+          setConvertProgress({ done: Math.min(done, imageCount), total: imageCount })
+        })
+      } catch (err) {
+        console.error('이미지 변환 중 오류', err)
+        toast.error('일부 이미지 최적화 실패 — 원본으로 진행')
+        finalFiles = accepted
+      } finally {
+        setConverting(false)
+      }
+    }
+
+    setFiles(finalFiles)
+    setFileStatuses(finalFiles.map(() => ({ status: 'pending', progress: 0 })))
   }
 
   const removeFile = (i) => {
@@ -453,15 +483,31 @@ export default function AdminUpload() {
                     multiple
                     accept="image/*,video/*"
                     onChange={handleFileChange}
-                    disabled={uploading}
+                    disabled={uploading || converting}
                   />
                   <span className="admin-upload__file-btn">
-                    {files.length > 0 ? `파일 다시 선택 (${files.length}개)` : '파일 선택하기'}
+                    {converting
+                      ? `이미지 최적화 중... (${convertProgress.done}/${convertProgress.total})`
+                      : files.length > 0
+                        ? `파일 다시 선택 (${files.length}개)`
+                        : '파일 선택하기'}
                   </span>
                   <span className="admin-upload__file-hint">
                     여러 파일 선택 가능 · 이미지 최대 10MB · 영상 최대 500MB
+                    {' · '}이미지는 자동으로 WebP로 변환됩니다
                   </span>
                 </label>
+
+                {converting && (
+                  <div className="admin-upload__convert-bar">
+                    <div
+                      className="admin-upload__convert-fill"
+                      style={{
+                        width: `${convertProgress.total > 0 ? (convertProgress.done / convertProgress.total) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
+                )}
 
                 {files.length > 0 && (
                   <ul className="admin-upload__file-list">
@@ -646,28 +692,15 @@ export default function AdminUpload() {
             <ul className="admin-upload__media-list">
               {mediaList.map((item, i) => {
                 const isVideo = item.mediaType === 'VIDEO'
-                // 영상은 fileUrl을 src로, thumbnailUrl이 있으면 poster로 사용
-                const imgSrc = item.thumbnailUrl || item.fileUrl
-                const videoSrc = item.fileUrl
-                const videoPoster = item.thumbnailUrl || undefined
-                const hasMedia = isVideo ? !!videoSrc : !!imgSrc
+                // 영상은 정적 썸네일만 노출(자동재생 X). 이미지는 thumbnailUrl 우선, 없으면 fileUrl.
+                const imgSrc = isVideo
+                  ? (item.thumbnailUrl || null)
+                  : (item.thumbnailUrl || item.fileUrl)
                 return (
                   <li key={item.id} className="admin-upload__media-item">
                     <div className="admin-upload__media-thumb">
-                      {hasMedia ? (
-                        isVideo ? (
-                          <video
-                            src={videoSrc}
-                            poster={videoPoster}
-                            muted
-                            loop
-                            autoPlay
-                            playsInline
-                            preload="auto"
-                          />
-                        ) : (
-                          <img src={imgSrc} alt="" loading="lazy" />
-                        )
+                      {imgSrc ? (
+                        <img src={imgSrc} alt="" loading="lazy" decoding="async" />
                       ) : (
                         <div className="admin-upload__media-thumb-placeholder" />
                       )}
