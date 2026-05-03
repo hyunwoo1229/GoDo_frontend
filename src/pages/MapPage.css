@@ -73,9 +73,12 @@
 }
 
 .map-page__overlay--title {
-  top: 24px;
-  left: 76px; /* BackButton(44px) + 16px gap + 16px left padding */
+  /* BackButton과 같은 라인(top: navbar + 16 + safe-top)에 정렬 */
+  top: calc(72px + 16px + var(--safe-top));
+  /* BackButton(44px) + 12px gap + 16px left + safe-left */
+  left: calc(16px + 44px + 12px + var(--safe-left));
   max-width: 360px;
+  padding: 0.875rem 1.25rem;
 }
 
 .map-page__title {
@@ -398,11 +401,26 @@
 
 @media (max-width: 768px) {
   .map-page__overlay--title {
-    top: 140px; /* BackButton(top:80 + height:44) + 여유 */
-    left: 16px;
-    right: 16px;
+    /* 모바일에서도 BackButton 옆에 나란히 배치 */
+    top: calc(64px + 12px + var(--safe-top));
+    left: calc(12px + 44px + 8px + var(--safe-left));
+    right: calc(12px + var(--safe-right));
     max-width: none;
-    padding: 1rem 1.25rem;
+    padding: 0.625rem 0.875rem;
+  }
+
+  /* 작은 화면에서는 제목/라벨만 노출, 설명은 너무 좁아 숨김 */
+  .map-page__title {
+    font-size: 1.4rem;
+    margin-top: 0.1rem;
+    margin-bottom: 0;
+    line-height: 1.1;
+  }
+  .map-page__desc {
+    display: none;
+  }
+  .map-page__overlay--title .section-label {
+    font-size: 0.6rem;
   }
 
   .map-page__overlay--count {
