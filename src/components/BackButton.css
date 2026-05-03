@@ -1,7 +1,8 @@
 .back-button {
   position: fixed;
-  top: 88px; /* navbar(72px) 아래 */
-  left: 16px;
+  /* navbar(72px) + 16px gap + safe-area */
+  top: calc(72px + 16px + var(--safe-top));
+  left: calc(16px + var(--safe-left));
   z-index: 50;
 
   width: 44px;
@@ -37,9 +38,8 @@
 
 @media (max-width: 768px) {
   .back-button {
-    top: 80px;
-    left: 12px;
-    width: 44px;
-    height: 44px;
+    /* 모바일 navbar 64px 사용 */
+    top: calc(64px + 12px + var(--safe-top));
+    left: calc(12px + var(--safe-left));
   }
 }

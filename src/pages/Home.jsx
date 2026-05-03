@@ -184,7 +184,7 @@ function MapPreviewSection() {
           <Map
             center={{ lat: 36.5, lng: 127.8 }}
             level={13}
-            style={{ width: '100%', height: '500px' }}
+            style={{ width: '100%', height: '100%' }}
           >
             {locations.map((loc, i) => (
               <MapMarker

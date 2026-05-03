@@ -90,10 +90,17 @@
 .hero {
   position: relative;
   height: 100vh;
+  height: 100dvh;
   min-height: 680px;
   display: flex;
   align-items: center;
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: 560px;
+  }
 }
 
 /* Gradient fallback — replaced by your image */
@@ -148,7 +155,11 @@
 .hero__content {
   position: relative;
   z-index: 1;
-  padding-top: 72px; /* navbar height */
+  padding-top: calc(72px + var(--safe-top)); /* navbar height + safe-area */
+}
+
+@media (max-width: 768px) {
+  .hero__content { padding-top: calc(64px + var(--safe-top)); }
 }
 
 .hero__eyebrow {
@@ -469,6 +480,17 @@
   border-radius: 3px;
   overflow: hidden;
   background: var(--bg-3);
+  height: 500px;
+}
+
+@media (max-width: 1024px) {
+  .map-preview__wrap { height: 400px; }
+}
+@media (max-width: 768px) {
+  .map-preview__wrap { height: 320px; }
+}
+@media (max-width: 480px) {
+  .map-preview__wrap { height: 260px; }
 }
 
 .map-preview__fullscreen {
@@ -486,11 +508,24 @@
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 2px;
   transition: background 0.2s ease, border-color 0.2s ease;
+  /* 모바일 터치 영역 보장 */
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
 }
 
 .map-preview__fullscreen:hover {
   background: rgba(8, 8, 8, 1);
   border-color: rgba(255, 255, 255, 0.45);
+}
+
+@media (max-width: 480px) {
+  .map-preview__fullscreen {
+    top: 10px;
+    right: 10px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.72rem;
+  }
 }
 
 /* ═══════════════════════════════════════════════
@@ -762,14 +797,27 @@
   }
 
   /* Stats */
+  .stats {
+    padding: 2.5rem 0;
+  }
   .stats__grid {
     grid-template-columns: repeat(2, 1fr);
+  }
+  .stats__item {
+    padding: 0.75rem 1rem;
+    gap: 0.25rem;
   }
   .stats__item:nth-child(2) {
     border-right: none;
   }
   .stats__item:nth-child(3) {
     border-top: 1px solid var(--border);
+  }
+  .stats__value {
+    font-size: 2rem;
+  }
+  .stats__label {
+    font-size: 0.65rem;
   }
 
   /* Portfolio */
@@ -818,9 +866,16 @@
   .about__visual {
     order: -1;
   }
+  .about__img-wrap {
+    aspect-ratio: 4 / 3;
+  }
   .about__badge {
     bottom: -1rem;
     left: -0.75rem;
+    padding: 0.875rem 1.25rem;
+  }
+  .about__badge-num {
+    font-size: 1.75rem;
   }
 
   /* Contact */
@@ -842,15 +897,36 @@
 @media (max-width: 480px) {
   .hero__actions {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .hero__actions .btn {
+    width: 100%;
   }
 
   .contact__actions {
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+  }
+  .contact__actions .btn {
+    width: 100%;
+    justify-content: center;
   }
 
   .btn--lg {
     width: 100%;
+  }
+
+  /* Hero subtitle / title 가독성 */
+  .hero__title {
+    font-size: clamp(2.75rem, 12vw, 4rem);
+  }
+  .hero__subtitle {
+    font-size: 0.92rem;
+  }
+
+  /* Footer brand 정렬 */
+  .footer {
+    padding: 2.5rem 0 calc(1.5rem + var(--safe-bottom));
   }
 }

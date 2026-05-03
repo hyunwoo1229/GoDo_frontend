@@ -1,10 +1,20 @@
 .map-page {
   position: relative;
   width: 100%;
+  /* iOS Safari URL바 보정: 100dvh가 가능하면 사용, 미지원 환경엔 100vh 폴백 */
   height: calc(100vh - 72px);
+  height: calc(100dvh - 72px);
   margin-top: 72px;
   background: var(--bg);
   overflow: hidden;
+}
+
+@media (max-width: 768px) {
+  .map-page {
+    height: calc(100vh - 64px);
+    height: calc(100dvh - 64px);
+    margin-top: 64px;
+  }
 }
 
 .map-page__map {
@@ -396,40 +406,70 @@
   }
 
   .map-page__overlay--count {
-    right: 16px;
-    bottom: 16px;
-    padding: 0.75rem 1rem;
+    right: calc(16px + var(--safe-right));
+    bottom: calc(16px + var(--safe-bottom));
+    padding: 0.6rem 0.9rem;
+    gap: 0.5rem;
   }
 
+  .map-page__count-num { font-size: 1.5rem; }
+  .map-page__count-label { font-size: 0.65rem; letter-spacing: 0.15em; }
+
   .gallery-modal {
-    padding: 60px 16px 40px;
+    padding: calc(60px + var(--safe-top)) 16px calc(40px + var(--safe-bottom));
   }
 
   .gallery-modal__header {
     flex-direction: row;
     align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .gallery-modal__close {
+    width: 44px;
+    height: 44px;
   }
 
   .gallery-modal__grid {
-    grid-template-columns: 1fr;
+    /* 한 열 1fr는 너무 커서 두 장씩 보이게 */
+    grid-template-columns: repeat(2, 1fr);
     gap: 6px;
   }
 
   .viewer {
-    padding: 20px;
+    padding: calc(20px + var(--safe-top)) 16px calc(20px + var(--safe-bottom));
+  }
+
+  .viewer__content img,
+  .viewer__content video {
+    /* close/nav 버튼 + 메타 영역과 겹치지 않도록 */
+    max-height: calc(100dvh - 200px);
   }
 
   .viewer__nav {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     font-size: 1.75rem;
   }
 
-  .viewer__nav--prev { left: 8px; }
-  .viewer__nav--next { right: 8px; }
+  .viewer__nav--prev { left: calc(8px + var(--safe-left)); }
+  .viewer__nav--next { right: calc(8px + var(--safe-right)); }
 
   .viewer__close {
-    top: 12px;
-    right: 16px;
+    top: calc(12px + var(--safe-top));
+    right: calc(12px + var(--safe-right));
+    width: 44px;
+    height: 44px;
+  }
+
+  .viewer__meta {
+    font-size: 0.72rem;
+    gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .gallery-modal__grid {
+    grid-template-columns: 1fr;
   }
 }
