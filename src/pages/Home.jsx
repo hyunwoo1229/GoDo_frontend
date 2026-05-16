@@ -74,52 +74,41 @@ function StatsSection() {
 // Portfolio Section (백엔드 API 연동)
 // ─────────────────────────────────────────────────────────────────
 function PortfolioCard({ item }) {
-  const [mediaError, setMediaError] = useState(false)
   const isVideo = item.mediaType === 'VIDEO'
   const title = item.locationName || item.originalFileName || `작품 #${item.id}`
   const category = isVideo ? '영상' : '사진'
 
-  // 우선순위:
-  //  1) thumbnailUrl이 있으면 <img>로 (정적 이미지)
-  //  2) 영상이면서 thumbnailUrl이 없으면 <video src=fileUrl#t=0.1>로 첫 프레임만 (autoplay X)
-  //  3) 이미지인데 thumbnailUrl이 없으면 <img src=fileUrl>로 원본
-  //  4) 둘 다 없으면 placeholder
-  const thumbUrl = item.thumbnailUrl || null
-  const fileUrl = item.fileUrl || null
+  // 시도할 소스 목록 — 앞에서부터 로드 시도, 실패 시 다음 소스로 자동 폴백
+  //  - 영상: thumbnailUrl(이미지) → fileUrl(영상 첫 프레임) → placeholder
+  //  - 이미지: thumbnailUrl(축소판) → fileUrl(원본) → placeholder
+  const sources = []
+  if (item.thumbnailUrl) {
+    sources.push({ kind: 'img', url: item.thumbnailUrl })
+  }
+  if (item.fileUrl) {
+    sources.push(
+      isVideo
+        ? { kind: 'video', url: `${item.fileUrl}#t=0.1` }
+        : { kind: 'img', url: item.fileUrl },
+    )
+  }
 
-  let media = null
-  if (!mediaError) {
-    if (thumbUrl) {
-      media = (
-        <img
-          src={thumbUrl}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          onError={() => setMediaError(true)}
-        />
-      )
-    } else if (isVideo && fileUrl) {
-      // 영상은 첫 프레임만 정적으로 — preload="metadata" + #t 미디어 프래그먼트
-      media = (
-        <video
-          src={`${fileUrl}#t=0.1`}
-          muted
-          playsInline
-          preload="metadata"
-          onError={() => setMediaError(true)}
-        />
-      )
-    } else if (!isVideo && fileUrl) {
-      media = (
-        <img
-          src={fileUrl}
-          alt={title}
-          loading="lazy"
-          decoding="async"
-          onError={() => setMediaError(true)}
-        />
-      )
+  const [sourceIndex, setSourceIndex] = useState(0)
+  const current = sources[sourceIndex]
+
+  const handleError = (e) => {
+    // 디버깅: 어떤 URL이 왜 실패했는지 콘솔에서 추적 가능
+    console.warn('[PortfolioCard] media load failed', {
+      id: item.id,
+      mediaType: item.mediaType,
+      tried: current?.url,
+      nativeError: e?.target?.error,
+    })
+    if (sourceIndex < sources.length - 1) {
+      setSourceIndex((i) => i + 1)
+    } else {
+      // 모든 소스 실패 → 인덱스를 끝까지 밀어 placeholder 노출
+      setSourceIndex(sources.length)
     }
   }
 
@@ -138,7 +127,28 @@ function PortfolioCard({ item }) {
       className="pf-card pf-card--small"
     >
       <div className="pf-card__media">
-        {media || <div className="pf-card__placeholder" data-index={item.id} />}
+        {current?.kind === 'img' && (
+          <img
+            key={current.url}
+            src={current.url}
+            alt={title}
+            loading="lazy"
+            decoding="async"
+            referrerPolicy="no-referrer"
+            onError={handleError}
+          />
+        )}
+        {current?.kind === 'video' && (
+          <video
+            key={current.url}
+            src={current.url}
+            muted
+            playsInline
+            preload="metadata"
+            onError={handleError}
+          />
+        )}
+        {!current && <div className="pf-card__placeholder" data-index={item.id} />}
         {isVideo && <span className="pf-card__play" aria-hidden="true">▶</span>}
       </div>
       <div className="pf-card__overlay">
