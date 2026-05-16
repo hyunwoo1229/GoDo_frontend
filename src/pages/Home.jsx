@@ -78,12 +78,50 @@ function PortfolioCard({ item }) {
   const isVideo = item.mediaType === 'VIDEO'
   const title = item.locationName || item.originalFileName || `작품 #${item.id}`
   const category = isVideo ? '영상' : '사진'
-  // 영상은 정적 썸네일만 노출(자동재생 X). 클릭 시 /map 갤러리로 이동해 사용자 명시적 재생.
-  // 이미지는 thumbnailUrl 우선, 없으면 fileUrl.
-  const imageSrc = isVideo
-    ? (item.thumbnailUrl || null)
-    : (item.thumbnailUrl || item.fileUrl)
-  const hasImage = !!imageSrc
+
+  // 우선순위:
+  //  1) thumbnailUrl이 있으면 <img>로 (정적 이미지)
+  //  2) 영상이면서 thumbnailUrl이 없으면 <video src=fileUrl#t=0.1>로 첫 프레임만 (autoplay X)
+  //  3) 이미지인데 thumbnailUrl이 없으면 <img src=fileUrl>로 원본
+  //  4) 둘 다 없으면 placeholder
+  const thumbUrl = item.thumbnailUrl || null
+  const fileUrl = item.fileUrl || null
+
+  let media = null
+  if (!mediaError) {
+    if (thumbUrl) {
+      media = (
+        <img
+          src={thumbUrl}
+          alt={title}
+          loading="lazy"
+          decoding="async"
+          onError={() => setMediaError(true)}
+        />
+      )
+    } else if (isVideo && fileUrl) {
+      // 영상은 첫 프레임만 정적으로 — preload="metadata" + #t 미디어 프래그먼트
+      media = (
+        <video
+          src={`${fileUrl}#t=0.1`}
+          muted
+          playsInline
+          preload="metadata"
+          onError={() => setMediaError(true)}
+        />
+      )
+    } else if (!isVideo && fileUrl) {
+      media = (
+        <img
+          src={fileUrl}
+          alt={title}
+          loading="lazy"
+          decoding="async"
+          onError={() => setMediaError(true)}
+        />
+      )
+    }
+  }
 
   return (
     <Link
@@ -100,17 +138,7 @@ function PortfolioCard({ item }) {
       className="pf-card pf-card--small"
     >
       <div className="pf-card__media">
-        {!mediaError && hasImage ? (
-          <img
-            src={imageSrc}
-            alt={title}
-            loading="lazy"
-            decoding="async"
-            onError={() => setMediaError(true)}
-          />
-        ) : (
-          <div className="pf-card__placeholder" data-index={item.id} />
-        )}
+        {media || <div className="pf-card__placeholder" data-index={item.id} />}
         {isVideo && <span className="pf-card__play" aria-hidden="true">▶</span>}
       </div>
       <div className="pf-card__overlay">
