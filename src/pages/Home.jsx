@@ -80,9 +80,9 @@ function PortfolioCard({ item }) {
 
   // 시도할 소스 목록 — 앞에서부터 로드 시도, 실패 시 다음 소스로 자동 폴백
   //  - 영상: thumbnailUrl(이미지) → fileUrl(영상 첫 프레임) → placeholder
-  //  - 이미지: thumbnailUrl(축소판) → fileUrl(원본) → placeholder
+  //  - 이미지: fileUrl(원본) → placeholder (백엔드가 이미지 썸네일은 생성하지 않음)
   const sources = []
-  if (item.thumbnailUrl) {
+  if (isVideo && item.thumbnailUrl) {
     sources.push({ kind: 'img', url: item.thumbnailUrl })
   }
   if (item.fileUrl) {
