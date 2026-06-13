@@ -233,15 +233,21 @@ function PortfolioSection() {
   const [ref, inView] = useInView()
   const { data: items = [], isLoading: loading } = useAllMedia(0, 18)
 
-  // locationName이 같은 항목끼리 그룹핑 (없으면 '기타'로 묶음)
+  // locationName이 같은 항목끼리 그룹핑 (없으면 '기타'로 묶음).
+  // 빌트인 Map 대신 일반 객체 사용 — 이 파일에서 import한 react-kakao-maps-sdk의
+  // Map 컴포넌트가 전역 Map을 가려서 `new Map()`이 실패함.
   const groups = useMemo(() => {
-    const map = new Map()
+    const grouped = {}
+    const order = []
     for (const it of items) {
       const key = it.locationName?.trim() || '기타'
-      if (!map.has(key)) map.set(key, [])
-      map.get(key).push(it)
+      if (!grouped[key]) {
+        grouped[key] = []
+        order.push(key)
+      }
+      grouped[key].push(it)
     }
-    return Array.from(map, ([locationName, list]) => ({ locationName, items: list }))
+    return order.map(key => ({ locationName: key, items: grouped[key] }))
   }, [items])
 
   return (
