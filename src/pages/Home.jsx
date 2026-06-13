@@ -16,7 +16,7 @@ function HeroSection() {
       <div className="hero__overlay" />
 
       <div className="hero__content container">
-        <p className="hero__eyebrow">DRONE STUDIO · SINCE 2020</p>
+        <p className="hero__eyebrow">DRONE STUDIO · SINCE 2024</p>
         <h1 className="hero__title">
           하늘 위에서,<br />
           새로운 시각
@@ -43,8 +43,8 @@ function HeroSection() {
 // Stats Section
 // ─────────────────────────────────────────────────────────────────
 const STATS = [
-  { value: '200+', label: '완료 프로젝트' },
-  { value: '5년',  label: '촬영 경력'    },
+  { value: '10+', label: '완료 프로젝트' },
+  { value: '2년',  label: '촬영 경력'    },
   { value: '4K·8K', label: '최고 화질'  },
   { value: '전국',  label: '출장 촬영'  },
 ]
@@ -395,7 +395,7 @@ function AboutSection() {
               이야기를 담습니다
             </h2>
             <p>
-              GODO는 전문 드론 파일럿과 영상 전문가들로 구성된
+              GoDo는 전문 드론 파일럿과 영상 전문가들로 구성된
               항공 촬영 스튜디오입니다. 최신 장비와 전문 기술로
               고객의 비전을 현실로 만들어 드립니다.
             </p>
@@ -412,14 +412,14 @@ function AboutSection() {
             <div className="about__img-wrap">
               <img
                 src="/images/about/studio.jpg"
-                alt="GODO 스튜디오"
+                alt="GoDo 스튜디오"
                 loading="lazy"
                 decoding="async"
                 onError={e => { e.currentTarget.style.display = 'none' }}
               />
             </div>
             <div className="about__badge">
-              <span className="about__badge-num">200+</span>
+              <span className="about__badge-num">10+</span>
               <span className="about__badge-text">성공 프로젝트</span>
             </div>
           </div>
@@ -446,11 +446,16 @@ function ContactSection() {
             어떤 공간이든, 어떤 순간이든 — 하늘 위에서 담아드립니다.
           </p>
           <div className="contact__actions">
-            <a href="mailto:hello@godo.kr" className="btn btn--primary btn--lg">
+            <a href="mailto:godo_hover@naver.com" className="btn btn--primary btn--lg">
               이메일 문의하기
             </a>
-            <a href="tel:010-0000-0000" className="btn btn--outline btn--lg">
-              010 · 0000 · 0000
+            <a
+              href="https://www.instagram.com/godo_hover/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="btn btn--outline btn--lg"
+            >
+              인스타그램
             </a>
           </div>
         </div>
@@ -468,7 +473,7 @@ function Footer() {
       <div className="container">
         <div className="footer__top">
           <div className="footer__brand">
-            <span className="footer__logo">GODO</span>
+            <span className="footer__logo">GoDo</span>
             <p>드론 촬영 스튜디오</p>
           </div>
           <nav className="footer__nav">
@@ -479,7 +484,7 @@ function Footer() {
           </nav>
         </div>
         <div className="footer__bottom">
-          <p>© {new Date().getFullYear()} GODO. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} GoDo. All rights reserved.</p>
         </div>
       </div>
     </footer>
