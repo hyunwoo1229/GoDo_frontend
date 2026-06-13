@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { Map, MapMarker, useKakaoLoader } from 'react-kakao-maps-sdk'
 import { services } from '../data/portfolio'
@@ -159,9 +159,90 @@ function PortfolioCard({ item }) {
   )
 }
 
+// locationName 별로 카드를 한 줄에 가로 스크롤로 보여주는 캐러셀
+// - 모바일: 1장 표시
+// - 데스크톱: 3장 표시
+// - 네비게이션: 스와이프(브라우저 native) 또는 좌/우 화살표 버튼
+function LocationCarousel({ locationName, items }) {
+  const trackRef = useRef(null)
+  const [canPrev, setCanPrev] = useState(false)
+  const [canNext, setCanNext] = useState(false)
+
+  useEffect(() => {
+    const el = trackRef.current
+    if (!el) return
+    const update = () => {
+      setCanPrev(el.scrollLeft > 1)
+      setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 1)
+    }
+    update()
+    el.addEventListener('scroll', update, { passive: true })
+    const ro = new ResizeObserver(update)
+    ro.observe(el)
+    return () => {
+      el.removeEventListener('scroll', update)
+      ro.disconnect()
+    }
+  }, [items.length])
+
+  const scrollByCard = (dir) => {
+    const el = trackRef.current
+    if (!el) return
+    const card = el.querySelector('.pf-row__item')
+    const step = card ? card.clientWidth + 10 : el.clientWidth
+    el.scrollBy({ left: dir * step, behavior: 'smooth' })
+  }
+
+  return (
+    <div className="pf-row">
+      <div className="pf-row__head">
+        <h3 className="pf-row__title">{locationName}</h3>
+        <div className="pf-row__nav">
+          <button
+            type="button"
+            className="pf-row__btn"
+            aria-label="이전"
+            disabled={!canPrev}
+            onClick={() => scrollByCard(-1)}
+          >
+            ‹
+          </button>
+          <button
+            type="button"
+            className="pf-row__btn"
+            aria-label="다음"
+            disabled={!canNext}
+            onClick={() => scrollByCard(1)}
+          >
+            ›
+          </button>
+        </div>
+      </div>
+      <div className="pf-row__track" ref={trackRef}>
+        {items.map(item => (
+          <div className="pf-row__item" key={item.id}>
+            <PortfolioCard item={item} />
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function PortfolioSection() {
   const [ref, inView] = useInView()
   const { data: items = [], isLoading: loading } = useAllMedia(0, 18)
+
+  // locationName이 같은 항목끼리 그룹핑 (없으면 '기타'로 묶음)
+  const groups = useMemo(() => {
+    const map = new Map()
+    for (const it of items) {
+      const key = it.locationName?.trim() || '기타'
+      if (!map.has(key)) map.set(key, [])
+      map.get(key).push(it)
+    }
+    return Array.from(map, ([locationName, list]) => ({ locationName, items: list }))
+  }, [items])
 
   return (
     <section id="portfolio" className="portfolio" ref={ref}>
@@ -184,9 +265,13 @@ function PortfolioSection() {
             </Link>
           </div>
         ) : (
-          <div className="portfolio__grid">
-            {items.map(item => (
-              <PortfolioCard key={item.id} item={item} />
+          <div className="portfolio__rows">
+            {groups.map(group => (
+              <LocationCarousel
+                key={group.locationName}
+                locationName={group.locationName}
+                items={group.items}
+              />
             ))}
           </div>
         )}

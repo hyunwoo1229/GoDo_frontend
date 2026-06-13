@@ -466,6 +466,99 @@
   letter-spacing: 0.02em;
 }
 
+/* ─────────────────────────────────────────────
+   Location grouped rows (가로 캐러셀)
+───────────────────────────────────────────── */
+.portfolio__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  margin-bottom: 3rem;
+}
+
+.pf-row__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.9rem;
+  gap: 1rem;
+}
+
+.pf-row__title {
+  font-size: 1.05rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--text-1);
+  margin: 0;
+}
+
+.pf-row__nav {
+  display: flex;
+  gap: 6px;
+}
+
+.pf-row__btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-1);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.pf-row__btn:hover:not(:disabled) {
+  background: var(--bg-3);
+  border-color: var(--text-2);
+}
+
+.pf-row__btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.pf-row__track {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding-bottom: 2px;
+}
+
+.pf-row__track::-webkit-scrollbar {
+  display: none;
+}
+
+/* 데스크톱: 3장 보이도록 — gap 10px * 2 = 20px 보정 */
+.pf-row__item {
+  flex: 0 0 calc((100% - 20px) / 3);
+  scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+  /* 모바일: 1장만 보이도록 */
+  .pf-row__item {
+    flex: 0 0 100%;
+  }
+  .pf-row__title {
+    font-size: 0.95rem;
+  }
+  .pf-row__btn {
+    width: 32px;
+    height: 32px;
+    font-size: 1.05rem;
+  }
+}
+
 /* ═══════════════════════════════════════════════
    MAP PREVIEW
 ═══════════════════════════════════════════════ */
