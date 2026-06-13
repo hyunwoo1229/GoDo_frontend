@@ -7,8 +7,6 @@ import { authService } from '../lib/auth'
 import { convertImagesToWebP } from '../utils/imageConverter'
 import './AdminUpload.css'
 
-const MAX_IMAGE_SIZE = 10 * 1024 * 1024        // 10MB
-const MAX_VIDEO_SIZE = 500 * 1024 * 1024       // 500MB
 const SEOUL_CENTER = { lat: 37.5665, lng: 126.9780 }
 
 function formatBytes(bytes) {
@@ -221,11 +219,6 @@ export default function AdminUpload() {
       const type = detectMediaType(f)
       if (!type) {
         toast.error(`${f.name}: 이미지/영상만 업로드 가능합니다`)
-        continue
-      }
-      const maxSize = type === 'IMAGE' ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE
-      if (f.size > maxSize) {
-        toast.error(`${f.name}: 용량 초과 (${formatBytes(maxSize)})`)
         continue
       }
       accepted.push(f)
@@ -493,8 +486,7 @@ export default function AdminUpload() {
                         : '파일 선택하기'}
                   </span>
                   <span className="admin-upload__file-hint">
-                    여러 파일 선택 가능 · 이미지 최대 10MB · 영상 최대 500MB
-                    {' · '}이미지는 자동으로 WebP로 변환됩니다
+                    여러 파일 선택 가능 · 이미지는 자동으로 WebP로 변환됩니다
                   </span>
                 </label>
 
